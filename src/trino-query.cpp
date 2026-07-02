@@ -99,11 +99,12 @@ std::string extractStringField(const std::string& body, const std::string& key) 
 // ── Client ────────────────────────────────────────────────────────────────────
 
 Client::Client(std::string uri, std::string catalog,
-               std::string schema, std::string user)
+               std::string schema, std::string user, std::string password)
     : uri_(std::move(uri))
     , catalog_(std::move(catalog))
     , schema_(std::move(schema))
     , user_(std::move(user))
+    , password_(std::move(password))
 {
     // Normalise: strip trailing slashes from the base URI.
     while (!uri_.empty() && uri_.back() == '/') {
@@ -135,6 +136,13 @@ std::string Client::submitQuery(const std::string& sql) const {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER,    hdrs.list);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA,     &responseBody);
+
+    // Enable basic authentication if password is provided
+    if (!password_.empty()) {
+        curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_easy_setopt(curl, CURLOPT_USERNAME, user_.c_str());
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, password_.c_str());
+    }
 
     const CURLcode rc = curl_easy_perform(curl);
     if (rc != CURLE_OK) {
@@ -171,6 +179,13 @@ std::string Client::fetchNext(const std::string& nextUri) const {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER,    hdrs.list);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA,     &responseBody);
+
+        // Enable basic authentication if password is provided
+        if (!password_.empty()) {
+            curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+            curl_easy_setopt(curl, CURLOPT_USERNAME, user_.c_str());
+            curl_easy_setopt(curl, CURLOPT_PASSWORD, password_.c_str());
+        }
 
         const CURLcode rc = curl_easy_perform(curl);
         if (rc != CURLE_OK) {

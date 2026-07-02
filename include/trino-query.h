@@ -30,11 +30,13 @@ public:
      * @param catalog  Trino catalog name (X-Trino-Catalog header).
      * @param schema   Trino schema name  (X-Trino-Schema  header).
      * @param user     Trino user identity (X-Trino-User   header). Defaults to "trino".
+     * @param password Password for basic authentication (optional).
      */
     Client(std::string uri,
            std::string catalog,
            std::string schema,
-           std::string user = "trino");
+           std::string user = "trino",
+           std::string password = "");
 
     ~Client();
 
@@ -62,6 +64,7 @@ private:
     std::string catalog_;
     std::string schema_;
     std::string user_;
+    std::string password_;
 
     // POST the SQL to /v1/statement; returns the raw JSON response body.
     std::string submitQuery(const std::string& sql) const;

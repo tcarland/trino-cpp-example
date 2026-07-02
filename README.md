@@ -36,27 +36,36 @@ The binary is written to `build/trino-example`.
 ## Usage
 
 ```
-./build/trino-example <uri> <catalog> <schema> <table> [limit]
+./build/trino-example <uri> <catalog> <schema> <table> <username> <password-file> [limit]
 
-  uri      Trino coordinator base URI  (e.g. http://localhost:8080)
-  catalog  Trino catalog name
-  schema   Trino schema / database name
-  table    Table to query
-  limit    Optional row limit (positive integer)
+  uri            Trino coordinator base URI  (e.g. http://localhost:8080)
+  catalog        Trino catalog name
+  schema         Trino schema / database name
+  table          Table to query
+  username       Username for basic authentication
+  password-file  Path to file containing the password
+  limit          Optional row limit (positive integer)
 ```
 
 ### Examples
 
-Query all rows from the TPCH `orders` table:
+First, create a password file:
 
 ```bash
-./build/trino-example http://localhost:8080 tpch sf1 orders
+echo "your_password" > ~/.trino_password
+chmod 600 ~/.trino_password
+```
+
+Query all rows from the TPCH `orders` table with authentication:
+
+```bash
+./build/trino-example http://localhost:8080 tpch sf1 orders myuser ~/.trino_password
 ```
 
 Limit to the first 20 rows:
 
 ```bash
-./build/trino-example http://localhost:8080 tpch sf1 orders 20
+./build/trino-example http://localhost:8080 tpch sf1 orders myuser ~/.trino_password 20
 ```
 
 Sample output:
