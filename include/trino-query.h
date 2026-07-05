@@ -35,7 +35,7 @@ public:
     Client(std::string uri,
            std::string catalog,
            std::string schema,
-           std::string user = "trino",
+           std::string user     = "trino",
            std::string password = "");
 
     ~Client();
@@ -56,8 +56,8 @@ public:
      * @return       Raw JSON array where each element is one Trino response page.
      * @throws TrinoException on transport or HTTP failure.
      */
-    std::string selectAll(const std::string& table,
-                          std::optional<int> limit = std::nullopt);
+    std::string selectAll ( const std::string& table,
+                            std::optional<int> limit = std::nullopt );
 
 private:
     std::string uri_;
@@ -67,10 +67,10 @@ private:
     std::string password_;
 
     // POST the SQL to /v1/statement; returns the raw JSON response body.
-    std::string submitQuery(const std::string& sql) const;
+    std::string submitQuery ( const std::string& sql ) const;
 
     // GET a nextUri, retrying automatically on HTTP 503. Returns JSON body.
-    std::string fetchNext(const std::string& nextUri) const;
+    std::string fetchNext ( const std::string& nextUri ) const;
 };
 
 } // namespace trino

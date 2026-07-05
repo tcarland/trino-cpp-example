@@ -13,7 +13,8 @@ namespace trino {
 namespace {
 
 /// libcurl write callback: appends received bytes to a std::string.
-size_t writeCallback(char* ptr, size_t size, size_t nmemb, std::string* out) {
+size_t writeCallback ( char* ptr, size_t size, size_t nmemb, std::string* out ) 
+{
     out->append(ptr, size * nmemb);
     return size * nmemb;
 }
@@ -54,7 +55,8 @@ struct CurlHeaders {
  * used to extract well-known fields like "nextUri" from Trino responses
  * whose structure we already understand.
  */
-std::string extractStringField(const std::string& body, const std::string& key) {
+std::string extractStringField ( const std::string& body, const std::string& key ) 
+{
     const std::string needle = "\"" + key + "\"";
     const auto kpos = body.find(needle);
     if (kpos == std::string::npos) return {};
@@ -98,8 +100,8 @@ std::string extractStringField(const std::string& body, const std::string& key) 
 
 // ── Client ────────────────────────────────────────────────────────────────────
 
-Client::Client(std::string uri, std::string catalog,
-               std::string schema, std::string user, std::string password)
+Client::Client ( std::string uri, std::string catalog,
+                 std::string schema, std::string user, std::string password )
     : uri_(std::move(uri))
     , catalog_(std::move(catalog))
     , schema_(std::move(schema))
@@ -116,7 +118,8 @@ Client::~Client() = default;
 
 // ── Private transport helpers ─────────────────────────────────────────────────
 
-std::string Client::submitQuery(const std::string& sql) const {
+std::string Client::submitQuery ( const std::string & sql ) const 
+{
     CurlHandle  curl;
     CurlHeaders hdrs;
 
@@ -158,14 +161,16 @@ std::string Client::submitQuery(const std::string& sql) const {
 
     return responseBody;
 }
-
-std::string Client::fetchNext(const std::string& nextUri) const {
+    
+std::string Client::fetchNext ( const std::string& nextUri ) const
+{
     // Trino returns HTTP 503 when the coordinator is under back-pressure.
     // Retry the same URI after a short fixed delay.
     constexpr int  kMaxAttempts = 60;
     constexpr auto kRetryDelay  = std::chrono::milliseconds(100);
 
-    for (int attempt = 0; attempt < kMaxAttempts; ++attempt) {
+    for ( int attempt = 0; attempt < kMaxAttempts; ++attempt ) 
+    {
         CurlHandle  curl;
         CurlHeaders hdrs;
 
@@ -181,22 +186,22 @@ std::string Client::fetchNext(const std::string& nextUri) const {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA,     &responseBody);
 
         // Enable basic authentication if password is provided
-        if (!password_.empty()) {
+        if ( !password_.empty() ) {
             curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
             curl_easy_setopt(curl, CURLOPT_USERNAME, user_.c_str());
             curl_easy_setopt(curl, CURLOPT_PASSWORD, password_.c_str());
         }
 
         const CURLcode rc = curl_easy_perform(curl);
-        if (rc != CURLE_OK) {
+        if ( rc != CURLE_OK )
             throw TrinoException(std::string("libcurl error: ") + curl_easy_strerror(rc));
-        }
 
         long httpCode = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
-        if (httpCode == 200) return responseBody;
-        if (httpCode == 503) {
+        if ( httpCode == 200 )
+            return responseBody;
+        if ( httpCode == 503 ) {
             std::this_thread::sleep_for(kRetryDelay);
             continue;
         }
@@ -210,11 +215,11 @@ std::string Client::fetchNext(const std::string& nextUri) const {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-std::string Client::selectAll(const std::string& table, std::optional<int> limit) {
+std::string Client::selectAll ( const std::string& table, std::optional<int> limit )
+{
     std::string sql = "SELECT * FROM " + table;
-    if (limit.has_value()) {
+    if ( limit.has_value() )
         sql += " LIMIT " + std::to_string(*limit);
-    }
 
     // Collect every raw response page into a JSON array so the caller receives
     // a single, valid JSON document containing the full result set.
@@ -223,15 +228,17 @@ std::string Client::selectAll(const std::string& table, std::optional<int> limit
 
     std::string body = submitQuery(sql);
 
-    while (true) {
-        if (!firstPage) output += ',';
+    while ( true ) {
+        if ( !firstPage )
+            output += ',';
         output += body;
         firstPage = false;
 
         // extractStringField returns "" when "nextUri" is absent or null —
         // either means the coordinator has no more pages.
         const std::string nextUri = extractStringField(body, "nextUri");
-        if (nextUri.empty()) break;
+        if ( nextUri.empty() )
+            break;
 
         body = fetchNext(nextUri);
     }
