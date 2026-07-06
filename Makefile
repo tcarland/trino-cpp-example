@@ -2,39 +2,48 @@
 # Author: tca
 # Date:   2026-07-03
 
-TCMAKE_BUILD := ../tcmake/bin/tcmake_build.sh
-PREFIX       ?= .
+TCMAKE_BUILD  := ../tcmake/bin/tcmake_build.sh
+TCMAKE_PREFIX ?= $(TCAMAKE_PREFIX)
+RSYNC         := rsync -av
+MKDIR         := mkdir -p
 
 .PHONY: all build clean distclean test install help
 
-# Default target
 all: build
 
-# Configure and build the project
 build:
 	@$(TCMAKE_BUILD) all
+	@echo
 
-# Run tests
 test:
 	@$(TCMAKE_BUILD) test
+	@echo
 
-# Install to PREFIX
 install:
-	@$(TCMAKE_BUILD) install -p $(PREFIX)
+ifdef TCMAKE_PREFIX
+	$(MKDIR) $(TCMAKE_PREFIX)/include/trinoquery
+	$(MKDIR) $(TCMAKE_PREFIX)/lib
+	$(RSYNC) --delete include/ $(TCAMAKE_PREFIX)/include/tcanetpp/
+	$(RSYNC) lib/ $(TCAMAKE_PREFIX)/lib/
+	@echo
+else
+	@$(RSYNC) build/bin ./
+	@$(RSYNC) build/lib ./
+endif
 
-# Clean build artifacts (keeps configuration)
 clean:
 	@$(TCMAKE_BUILD) clean
+	@echo
 
-# Full clean (removes build directory)
 distclean:
 	@$(TCMAKE_BUILD) distclean
+	rm -rf bin lib
+	@echo
 
 # Reconfigure (useful after changing CMakeLists.txt)
 config:
 	@$(TCMAKE_BUILD) config
 
-# Help target
 help:
 	@echo "tcmake build wrapper - Available targets:"
 	@echo ""

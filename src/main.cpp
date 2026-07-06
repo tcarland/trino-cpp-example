@@ -1,5 +1,11 @@
 #include "trino-query.h"
 
+extern "C" {
+#include <getopt.h>
+#include <string.h>
+#include <unistd.h>
+}
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -8,38 +14,90 @@
 
 #include <curl/curl.h>
 
-static void printUsage(const char* prog) {
+
+static void usage ( const char* prog ) {
     std::cerr
-        << "Usage: " << prog
-        << " <uri> <catalog> <schema> <table> <username> <password-file> [limit]\n\n"
-        << "  uri            Trino coordinator base URI  (e.g. http://localhost:8080)\n"
-        << "  catalog        Trino catalog name\n"
-        << "  schema         Trino schema / database name\n"
-        << "  table          Table to query (SELECT * FROM <table>)\n"
-        << "  username       Username for basic authentication\n"
-        << "  password-file  Path to file containing the password\n"
-        << "  limit          Optional maximum number of rows to return\n";
+        << "Usage: " << prog << " [-u:U:P:] <catalog> <schema> <table> [limit]\n"
+        << "  -h | --help   :  Show usage info and exit. \n"
+        << "  -u | --uri    :  Trino coordinator base URI  (e.g. http://localhost:8080)\n"
+        << "  -U | --user   :  Username for basic authentication. Default: trino\n"
+        << "  -P | --pwfile :  Path to file containing the password. Default: .trino_password\n"
+        << "    catalog        Trino catalog name\n"
+        << "    schema         Trino schema / database name\n"
+        << "    table          Table to query (SELECT * FROM <table>)\n"
+        << "    limit          Optional maximum number of rows to return\n";
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 7 || argc > 8) {
-        printUsage(argv[0]);
+static int maxstrlen = 1024;
+
+int 
+main ( int argc, char* argv[] ) 
+{
+    char   optChar;
+    char  *uristr  = nullptr;
+    char  *userstr = nullptr;
+    char  *pwfile  = nullptr;
+    
+    std::string uri;
+    std::string user = "trino";
+    std::string pwf  = ".trino_password";
+
+    if ( argc < 4 ) {
+        usage(argv[0]);
         return EXIT_FAILURE;
     }
 
-    const std::string uri          = argv[1];
-    const std::string catalog      = argv[2];
-    const std::string schema       = argv[3];
-    const std::string table        = argv[4];
-    const std::string username     = argv[5];
-    const std::string passwordFile = argv[6];
+    int optindx = 0;
+    static struct option l_opts[] = { {"help",      no_argument, 0, 'h'},
+                                      {"uri",       required_argument, 0, 'u'},
+                                      {"user",      required_argument, 0, 'U'},
+                                      {"pwfile",    required_argument, 0, 'P'},
+                                      {0,0,0,0}
+                                    };
+
+    while ( (optChar = ::getopt_long(argc, argv, "hu:U:P:", l_opts, &optindx)) != EOF ) {
+        switch ( optChar ) {
+            case 'u':
+                uristr  = ::strdup(optarg);
+                break;
+            case 'U':
+                userstr = ::strdup(optarg);
+                break;
+            case 'P':
+                pwfile  = ::strdup(optarg);
+                break;
+            default:
+                break;
+        }
+    }
+    const std::string catalog  = argv[1];
+    const std::string schema   = argv[2];
+    const std::string table    = argv[3];
+
+    if ( uristr != nullptr && ::strnlen(uristr, maxstrlen) > 0 ) {
+        uri = uristr;
+        ::free(uristr);
+    } else {
+        std::cerr << "Trino URI is a required parameter" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if ( userstr != nullptr && ::strnlen(userstr, maxstrlen) > 0 ) {
+        user = userstr;
+        ::free(userstr);
+    }
+
+    if ( pwfile != nullptr && ::strnlen(pwfile, maxstrlen) > 0 ) {
+        pwf = pwfile;
+        ::free(pwfile);
+    }
 
     // Read password from file
     std::string password;
     {
-        std::ifstream ifs(passwordFile);
-        if (!ifs) {
-            std::cerr << "Error: cannot open password file '" << passwordFile << "'\n";
+        std::ifstream ifs(pwf);
+        if ( !ifs ) {
+            std::cerr << "Error: cannot open password file '" << pwf << "'\n";
             return EXIT_FAILURE;
         }
         std::getline(ifs, password);
@@ -48,13 +106,12 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
         }
         // Trim trailing whitespace/newline
-        while (!password.empty() && std::isspace(static_cast<unsigned char>(password.back()))) {
+        while ( !password.empty() && std::isspace(static_cast<unsigned char>(password.back())) )
             password.pop_back();
-        }
     }
 
     std::optional<int> limit;
-    if (argc == 8) {
+    if ( argc == 8 ) {
         try {
             const int n = std::stoi(argv[7]);
             if (n <= 0) throw std::invalid_argument("must be a positive integer");
@@ -71,12 +128,12 @@ int main(int argc, char* argv[]) {
 
     int exitCode = EXIT_SUCCESS;
     try {
-        trino::Client client(uri, catalog, schema, username, password);
+        trino::Client client(uri, catalog, schema, user, password);
         std::cout << client.selectAll(table, limit) << '\n';
-    } catch (const trino::TrinoException& ex) {
+    } catch ( const trino::TrinoException& ex ) {
         std::cerr << "Trino error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
-    } catch (const std::exception& ex) {
+    } catch ( const std::exception& ex ) {
         std::cerr << "Error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
     }
