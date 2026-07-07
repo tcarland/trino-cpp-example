@@ -132,7 +132,7 @@ std::string Client::submitQuery ( const std::string & sql ) const
     const std::string url = uri_ + "/v1/statement";
     std::string responseBody;
 
-    curl_easy_setopt(curl, CURLOPT_URL,          url.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL,           url.c_str());
     curl_easy_setopt(curl, CURLOPT_POST,          1L);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,    sql.c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(sql.size()));
@@ -179,7 +179,7 @@ std::string Client::fetchNext ( const std::string& nextUri ) const
 
         std::string responseBody;
 
-        curl_easy_setopt(curl, CURLOPT_URL,          nextUri.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL,           nextUri.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPGET,       1L);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER,    hdrs.list);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);

@@ -42,11 +42,6 @@ main ( int argc, char* argv[] )
     std::string user = "trino";
     std::string pwf  = ".trino_password";
 
-    if ( argc < 4 ) {
-        usage(argv[0]);
-        return EXIT_FAILURE;
-    }
-
     int optindx = 0;
     static struct option l_opts[] = { {"help",      no_argument, 0, 'h'},
                                       {"uri",       required_argument, 0, 'u'},
@@ -70,9 +65,16 @@ main ( int argc, char* argv[] )
                 break;
         }
     }
-    const std::string catalog  = argv[1];
-    const std::string schema   = argv[2];
-    const std::string table    = argv[3];
+
+    // Check that we have the required positional arguments (catalog, schema, table)
+    if ( argc - optind < 3 ) {
+        usage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    const std::string catalog  = argv[optind];
+    const std::string schema   = argv[optind + 1];
+    const std::string table    = argv[optind + 2];
 
     if ( uristr != nullptr && ::strnlen(uristr, maxstrlen) > 0 ) {
         uri = uristr;
@@ -111,13 +113,13 @@ main ( int argc, char* argv[] )
     }
 
     std::optional<int> limit;
-    if ( argc == 8 ) {
+    if ( argc - optind >= 4 ) {
         try {
-            const int n = std::stoi(argv[7]);
+            const int n = std::stoi(argv[optind + 3]);
             if (n <= 0) throw std::invalid_argument("must be a positive integer");
             limit = n;
         } catch (const std::exception& ex) {
-            std::cerr << "Error: invalid limit value '" << argv[7]
+            std::cerr << "Error: invalid limit value '" << argv[optind + 3]
                       << "': " << ex.what() << '\n';
             return EXIT_FAILURE;
         }
