@@ -1,0 +1,29 @@
+name: C/C++ Build CI
+
+on:
+  push:
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Build Container
+      run: docker build -t ${{ env.IMAGE_NAME }} -f Containerfile .
+
+    - name: Run Build Process
+      run: docker run --rm ${{ env.IMAGE_NAME }} /bin/bash -c "cd /opt/trino-cpp && make"
+
