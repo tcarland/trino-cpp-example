@@ -3,6 +3,7 @@
 *.so
 *.json
 
+.cache
 build
 bin
 lib

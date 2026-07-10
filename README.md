@@ -1,6 +1,6 @@
 # trino-cpp
 
-A C++17 library for querying [Trino](https://trino.io) via its HTTP REST
+A C++ library for querying [Trino](https://trino.io) via its HTTP REST
 API using **libcurl** for transport.
 
 There is no official C++ driver for Trino; this project demonstrates how to
@@ -13,7 +13,7 @@ embedding Trino queries in a C++ application.
 
 | Dependency | Version | Notes |
 |---|---|---|
-| C++17 compiler | GCC 9 / Clang 9 / MSVC 2019+ | |
+| C++ compiler | GCC 9 / Clang 9 / MSVC 2019+ | |
 | CMake | 3.14+ | |
 | libcurl | any recent | `libcurl-dev` (Debian/Ubuntu) or `libcurl-devel` (RHEL/Fedora) |
 
