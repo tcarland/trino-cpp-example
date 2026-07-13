@@ -15,7 +15,9 @@ extern "C" {
 #include <curl/curl.h>
 
 
-static void usage ( const char* prog ) {
+static void
+usage ( const char* prog )
+{
     std::cerr
         << "Usage: " << prog << " [-u:U:P:] <catalog> <schema> <table> [limit]\n"
         << "  -h | --help   :  Show usage info and exit. \n"
@@ -30,6 +32,8 @@ static void usage ( const char* prog ) {
 
 static int maxstrlen = 1024;
 
+
+
 int 
 main ( int argc, char* argv[] ) 
 {
@@ -43,10 +47,10 @@ main ( int argc, char* argv[] )
     std::string pwf  = ".trino_password";
 
     int optindx = 0;
-    static struct option l_opts[] = { {"help",      no_argument, 0, 'h'},
-                                      {"uri",       required_argument, 0, 'u'},
-                                      {"user",      required_argument, 0, 'U'},
-                                      {"pwfile",    required_argument, 0, 'P'},
+    static struct option l_opts[] = { {"help",   no_argument, 0, 'h'},
+                                      {"uri",    required_argument, 0, 'u'},
+                                      {"user",   required_argument, 0, 'U'},
+                                      {"pwfile", required_argument, 0, 'P'},
                                       {0,0,0,0}
                                     };
 
@@ -98,17 +102,17 @@ main ( int argc, char* argv[] )
     std::string password;
     {
         std::ifstream ifs(pwf);
-        if ( !ifs ) {
+        if ( ! ifs ) {
             std::cerr << "Error: cannot open password file '" << pwf << "'\n";
             return EXIT_FAILURE;
         }
         std::getline(ifs, password);
-        if (password.empty()) {
+        if ( password.empty() ) {
             std::cerr << "Error: password file is empty\n";
             return EXIT_FAILURE;
         }
         // Trim trailing whitespace/newline
-        while ( !password.empty() && std::isspace(static_cast<unsigned char>(password.back())) )
+        while ( ! password.empty() && std::isspace(static_cast<unsigned char>(password.back())) )
             password.pop_back();
     }
 
@@ -118,7 +122,7 @@ main ( int argc, char* argv[] )
             const int n = std::stoi(argv[optind + 3]);
             if (n <= 0) throw std::invalid_argument("must be a positive integer");
             limit = n;
-        } catch (const std::exception& ex) {
+        } catch ( const std::exception & ex ) {
             std::cerr << "Error: invalid limit value '" << argv[optind + 3]
                       << "': " << ex.what() << '\n';
             return EXIT_FAILURE;
@@ -132,10 +136,10 @@ main ( int argc, char* argv[] )
     try {
         trino::Client client(uri, catalog, schema, user, password);
         std::cout << client.selectAll(table, limit) << '\n';
-    } catch ( const trino::TrinoException& ex ) {
+    } catch ( const trino::TrinoException & ex ) {
         std::cerr << "Trino error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
-    } catch ( const std::exception& ex ) {
+    } catch ( const std::exception & ex ) {
         std::cerr << "Error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
     }

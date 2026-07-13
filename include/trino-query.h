@@ -13,17 +13,20 @@ public:
     explicit TrinoException(const std::string& msg) : std::runtime_error(msg) {}
 };
 
+
 /**
- * Lightweight Trino REST client backed by libcurl.
- *
- * Typical usage:
- *   trino::Client client("http://localhost:8080", "tpch", "sf1");
- *   std::string json = client.selectAll("orders", 100);
- *
- * The client is not thread-safe; create one instance per thread.
- */
+  * Lightweight Trino REST client backed by libcurl.
+  *
+  * Typical usage:
+  *   trino::Client client("http://localhost:8080", "tpch", "sf1");
+  *   std::string json = client.selectAll("orders", 100);
+  *
+  * The client is not thread-safe; create one instance per thread.
+ **/
 class Client {
 public:
+    static const std::string Version;
+
     /**
      * @param uri      Base URI of the Trino coordinator, e.g. "http://host:8080".
      *                 A trailing slash is ignored.
@@ -32,18 +35,18 @@ public:
      * @param user     Trino user identity (X-Trino-User   header). Defaults to "trino".
      * @param password Password for basic authentication (optional).
      */
-    Client(std::string uri,
-           std::string catalog,
-           std::string schema,
-           std::string user     = "trino",
-           std::string password = "");
+    Client ( std::string uri,
+             std::string catalog,
+             std::string schema,
+             std::string user     = "trino",
+             std::string password = "" );
 
-    ~Client();
+    virtual ~Client();
 
-    Client(const Client&)            = delete;
-    Client& operator=(const Client&) = delete;
-    Client(Client&&)                 = default;
-    Client& operator=(Client&&)      = default;
+    Client ( const Client& )            = delete;
+    Client ( Client&& )                 = default;
+    Client& operator= ( const Client& ) = delete;
+    Client& operator= ( Client&& )      = default;
 
     /**
      * Execute  SELECT * FROM <table> [LIMIT <limit>].
@@ -60,6 +63,7 @@ public:
                             std::optional<int> limit = std::nullopt );
 
 private:
+    
     std::string uri_;
     std::string catalog_;
     std::string schema_;
@@ -67,10 +71,10 @@ private:
     std::string password_;
 
     // POST the SQL to /v1/statement; returns the raw JSON response body.
-    std::string submitQuery ( const std::string& sql ) const;
+    std::string submitQuery ( const std::string & sql ) const;
 
     // GET a nextUri, retrying automatically on HTTP 503. Returns JSON body.
-    std::string fetchNext ( const std::string& nextUri ) const;
+    std::string fetchNext ( const std::string & nextUri ) const;
 };
 
 } // namespace trino
