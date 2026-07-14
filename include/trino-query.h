@@ -62,6 +62,18 @@ public:
     std::string selectAll ( const std::string& table,
                             std::optional<int> limit = std::nullopt );
 
+    /**
+     * Execute an arbitrary SQL query.
+     *
+     * Pages through every nextUri returned by the coordinator and retries
+     * automatically on HTTP 503 back-pressure responses.
+     *
+     * @param sql    SQL query string to execute.
+     * @return       Raw JSON array where each element is one Trino response page.
+     * @throws TrinoException on transport or HTTP failure.
+     */
+    std::string Select ( const std::string& sql );
+
 private:
     
     std::string uri_;

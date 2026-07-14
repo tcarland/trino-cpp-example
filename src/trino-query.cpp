@@ -243,6 +243,12 @@ Client::selectAll ( const std::string & table, std::optional<int> limit )
     if ( limit.has_value() )
         sql += " LIMIT " + std::to_string(*limit);
 
+    return Select(sql);
+}
+
+std::string
+Client::Select ( const std::string & sql )
+{
     // Collect every raw response page into a JSON array so the caller receives
     // a single, valid JSON document containing the full result set.
     std::string output = "[";
