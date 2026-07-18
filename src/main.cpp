@@ -15,13 +15,17 @@ extern "C" {
 #include <curl/curl.h>
 
 
-static void usage ( const char* prog ) {
+static void
+usage ( const char* prog )
+{
     std::cerr
-        << "Usage: " << prog << " [-u:U:P:] <catalog> <schema> <table> [limit]\n"
+        << "Usage: " << prog << " [-u:U:P:q:] <catalog> <schema> <table> [limit]\n"
+        << "       " << prog << " [-u:U:P:] -q <query> <catalog> <schema>\n"
         << "  -h | --help   :  Show usage info and exit. \n"
         << "  -u | --uri    :  Trino coordinator base URI  (e.g. http://localhost:8080)\n"
         << "  -U | --user   :  Username for basic authentication. Default: trino\n"
         << "  -P | --pwfile :  Path to file containing the password. Default: .trino_password\n"
+        << "  -q | --query  :  Execute custom SQL query instead of SELECT * FROM <table>\n"
         << "    catalog        Trino catalog name\n"
         << "    schema         Trino schema / database name\n"
         << "    table          Table to query (SELECT * FROM <table>)\n"
@@ -30,27 +34,32 @@ static void usage ( const char* prog ) {
 
 static int maxstrlen = 1024;
 
+
+
 int 
 main ( int argc, char* argv[] ) 
 {
     char   optChar;
-    char  *uristr  = nullptr;
-    char  *userstr = nullptr;
-    char  *pwfile  = nullptr;
+    char  *uristr   = nullptr;
+    char  *userstr  = nullptr;
+    char  *pwfile   = nullptr;
+    char  *querystr = nullptr;
     
     std::string uri;
     std::string user = "trino";
     std::string pwf  = ".trino_password";
+    std::optional<std::string> customQuery;
 
     int optindx = 0;
-    static struct option l_opts[] = { {"help",      no_argument, 0, 'h'},
-                                      {"uri",       required_argument, 0, 'u'},
-                                      {"user",      required_argument, 0, 'U'},
-                                      {"pwfile",    required_argument, 0, 'P'},
+    static struct option l_opts[] = { {"help",   no_argument, 0, 'h'},
+                                      {"uri",    required_argument, 0, 'u'},
+                                      {"user",   required_argument, 0, 'U'},
+                                      {"pwfile", required_argument, 0, 'P'},
+                                      {"query",  required_argument, 0, 'q'},
                                       {0,0,0,0}
                                     };
 
-    while ( (optChar = ::getopt_long(argc, argv, "hu:U:P:", l_opts, &optindx)) != EOF ) {
+    while ( (optChar = ::getopt_long(argc, argv, "hu:U:P:q:", l_opts, &optindx)) != EOF ) {
         switch ( optChar ) {
             case 'u':
                 uristr  = ::strdup(optarg);
@@ -61,20 +70,35 @@ main ( int argc, char* argv[] )
             case 'P':
                 pwfile  = ::strdup(optarg);
                 break;
+            case 'q':
+                querystr = ::strdup(optarg);
+                break;
             default:
                 break;
         }
     }
 
-    // Check that we have the required positional arguments (catalog, schema, table)
-    if ( argc - optind < 3 ) {
+    // Parse custom query if provided
+    if ( querystr != nullptr && ::strnlen(querystr, maxstrlen) > 0 ) {
+        customQuery = querystr;
+        ::free(querystr);
+    }
+
+    // Check that we have the required positional arguments
+    // In query mode: catalog, schema (2 args)
+    // In table mode: catalog, schema, table (3 args)
+    const int requiredArgs = customQuery.has_value() ? 2 : 3;
+    if ( argc - optind < requiredArgs ) {
         usage(argv[0]);
         return EXIT_FAILURE;
     }
 
     const std::string catalog  = argv[optind];
     const std::string schema   = argv[optind + 1];
-    const std::string table    = argv[optind + 2];
+    std::string table;
+    if ( !customQuery.has_value() ) {
+        table = argv[optind + 2];
+    }
 
     if ( uristr != nullptr && ::strnlen(uristr, maxstrlen) > 0 ) {
         uri = uristr;
@@ -98,27 +122,27 @@ main ( int argc, char* argv[] )
     std::string password;
     {
         std::ifstream ifs(pwf);
-        if ( !ifs ) {
+        if ( ! ifs ) {
             std::cerr << "Error: cannot open password file '" << pwf << "'\n";
             return EXIT_FAILURE;
         }
         std::getline(ifs, password);
-        if (password.empty()) {
+        if ( password.empty() ) {
             std::cerr << "Error: password file is empty\n";
             return EXIT_FAILURE;
         }
         // Trim trailing whitespace/newline
-        while ( !password.empty() && std::isspace(static_cast<unsigned char>(password.back())) )
+        while ( ! password.empty() && std::isspace(static_cast<unsigned char>(password.back())) )
             password.pop_back();
     }
 
     std::optional<int> limit;
-    if ( argc - optind >= 4 ) {
+    if ( !customQuery.has_value() && argc - optind >= 4 ) {
         try {
             const int n = std::stoi(argv[optind + 3]);
             if (n <= 0) throw std::invalid_argument("must be a positive integer");
             limit = n;
-        } catch (const std::exception& ex) {
+        } catch ( const std::exception & ex ) {
             std::cerr << "Error: invalid limit value '" << argv[optind + 3]
                       << "': " << ex.what() << '\n';
             return EXIT_FAILURE;
@@ -131,11 +155,15 @@ main ( int argc, char* argv[] )
     int exitCode = EXIT_SUCCESS;
     try {
         trino::Client client(uri, catalog, schema, user, password);
-        std::cout << client.selectAll(table, limit) << '\n';
-    } catch ( const trino::TrinoException& ex ) {
+        if ( customQuery.has_value() ) {
+            std::cout << client.Select(*customQuery) << '\n';
+        } else {
+            std::cout << client.selectAll(table, limit) << '\n';
+        }
+    } catch ( const trino::TrinoException & ex ) {
         std::cerr << "Trino error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
-    } catch ( const std::exception& ex ) {
+    } catch ( const std::exception & ex ) {
         std::cerr << "Error: " << ex.what() << '\n';
         exitCode = EXIT_FAILURE;
     }
