@@ -93,7 +93,7 @@ extractStringField ( const std::string & body, const std::string & key )
             break;
         if ( c == '\\' && pos < body.size() ) {
             const char esc = body[pos++];
-            switch (esc) {
+            switch ( esc ) {
                 case '"':  value += '"';  break;
                 case '\\': value += '\\'; break;
                 case '/':  value += '/';  break;
@@ -111,19 +111,21 @@ extractStringField ( const std::string & body, const std::string & key )
 
 } // anonymous namespace
 
+
+
 // ── Client ────────────────────────────────────────────────────────────────────
 
-const std::string Client::Version = "0.1.4";
+const std::string Client::Version = "0.1.5";
 
 
 Client::Client ( std::string uri,    std::string catalog,
                  std::string schema, std::string user, 
                  std::string password )
-    : uri_(std::move(uri)),
-      catalog_(std::move(catalog)),
-      schema_(std::move(schema)),
-      user_(std::move(user)),
-      password_(std::move(password))
+  : uri_(std::move(uri)),
+    catalog_(std::move(catalog)),
+    schema_(std::move(schema)),
+    user_(std::move(user)),
+    password_(std::move(password))
 {
     // Normalise: strip trailing slashes from the base URI.
     while ( ! uri_.empty() && uri_.back() == '/' )
@@ -257,7 +259,7 @@ Client::Select ( const std::string & sql )
     std::string body = submitQuery(sql);
 
     while ( true ) {
-        if ( !firstPage )
+        if ( ! firstPage )
             output += ',';
         output += body;
         firstPage = false;

@@ -16,28 +16,27 @@ extern "C" {
 
 
 static void
-usage ( const char* prog )
+usage ( const char * prog )
 {
     std::cerr
         << "Usage: " << prog << " [-u:U:P:q:] <catalog> <schema> <table> [limit]\n"
         << "       " << prog << " [-u:U:P:] -q <query> <catalog> <schema>\n"
-        << "  -h | --help   :  Show usage info and exit. \n"
-        << "  -u | --uri    :  Trino coordinator base URI  (e.g. http://localhost:8080)\n"
-        << "  -U | --user   :  Username for basic authentication. Default: trino\n"
-        << "  -P | --pwfile :  Path to file containing the password. Default: .trino_password\n"
-        << "  -q | --query  :  Execute custom SQL query instead of SELECT * FROM <table>\n"
-        << "    catalog        Trino catalog name\n"
-        << "    schema         Trino schema / database name\n"
-        << "    table          Table to query (SELECT * FROM <table>)\n"
-        << "    limit          Optional maximum number of rows to return\n";
+        << "  -h | --help           :  Show usage info and exit. \n"
+        << "  -u | --uri    <uri>   :  Trino coordinator base URI  (e.g. http://localhost:8080)\n"
+        << "  -U | --user   <name>  :  Username for basic authentication. Default: trino\n"
+        << "  -P | --pwfile <file>  :  Path to file containing the password. Default: .trino_password\n"
+        << "  -q | --query  <stmt>  :  Execute custom SQL query instead of SELECT * FROM <table>\n"
+        << "   catalog              :  Trino catalog name\n"
+        << "   schema               :  Trino schema / database name\n"
+        << "   table                :  Table to query (SELECT * FROM <table>)\n"
+        << "   limit                :  Optional maximum number of rows to return\n";
 }
 
 static int maxstrlen = 1024;
 
 
-
 int 
-main ( int argc, char* argv[] ) 
+main ( int argc, char * argv[] ) 
 {
     char   optChar;
     char  *uristr   = nullptr;

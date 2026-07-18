@@ -1,8 +1,8 @@
-FROM ghcr.io/tcarland/tcanetpp:v1.6.14
+FROM ghcr.io/tcarland/:v1.6.14
 
-ENV TCAMAKE_PROJECT=/opt
-ENV TCAMAKE_HOME=/opt/tcmake
-ENV TCAMAKE_PREFIX=/usr
+ENV TCMAKE_PROJECT=/opt
+ENV TCMAKE_HOME=/opt/tcmake
+ENV TCMAKE_PREFIX=/usr
 
 USER root
 WORKDIR /opt

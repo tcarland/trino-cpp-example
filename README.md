@@ -32,22 +32,24 @@ make
 ```
 
 The library is written to `build/lib/libtrino-query`.
-The binary is written to `build/bin/trino-query`.
+The binary is written to  `build/bin/trino-query`.
 
 ---
 
 ## Usage
 
-```
-./build/trino-query <uri> <catalog> <schema> <table> <username> <password-file> [limit]
-
-  uri            Trino coordinator base URI  (e.g. http://localhost:8080)
-  catalog        Trino catalog name
-  schema         Trino schema / database name
-  table          Table to query
-  username       Username for basic authentication
-  password-file  Path to file containing the password
-  limit          Optional row limit (positive integer)
+```sh
+Usage: ./build/bin/trinoquery [-u:U:P:q:] <catalog> <schema> <table> [limit]
+       ./build/bin/trinoquery [-u:U:P:] -q <query> <catalog> <schema>
+  -h | --help           :  Show usage info and exit.
+  -u | --uri    <uri>   :  Trino coordinator base URI  (e.g. http://localhost:8080)
+  -U | --user   <name>  :  Username for basic authentication. Default: trino
+  -P | --pwfile <file>  :  Path to file containing the password. Default: .trino_password
+  -q | --query  <stmt>  :  Execute custom SQL query instead of SELECT * FROM <table>
+   catalog              :  Trino catalog name
+   schema               :  Trino schema / database name
+   table                :  Table to query (SELECT * FROM <table>)
+   limit                :  Optional maximum number of rows to return
 ```
 
 ### Examples
@@ -60,19 +62,16 @@ chmod 600 ~/.trino_password
 ```
 
 Query all rows from the TPCH `orders` table with authentication:
-
 ```bash
 ./build/bin/trino-query http://localhost:8080 tpch sf1 orders myuser ~/.trino_password
 ```
 
 Limit to the first 20 rows:
-
 ```bash
 ./build/bin/trino-query http://localhost:8080 tpch sf1 orders myuser ~/.trino_password 20
 ```
 
 Sample output:
-
 ```
 Querying tpch.sf1.orders (LIMIT 20) ...
 
@@ -133,7 +132,6 @@ sequenceDiagram
 ---
 
 ## Project layout
-
 ```
 trino-cpp/
 ├── CMakeLists.txt
@@ -144,8 +142,8 @@ trino-cpp/
     └── main.cpp           # CLI entry point / formatted table printer
 ```
 
-### Public API
 
+### Public API
 ```cpp
 // Construct a client bound to a coordinator, catalog, and schema.
 trino::Client client("http://localhost:8080", "tpch", "sf1");
@@ -158,4 +156,4 @@ trino::QueryResult result = client.selectAll("orders", 100);
 ```
 
 All cell values are normalised to `std::string`: `NULL` cells become the
-literal string `"NULL"`. 
+literal string `"NULL"`.
